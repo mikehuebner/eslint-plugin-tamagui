@@ -21,14 +21,15 @@
     "url": "https://github.com/mikehuebner/eslint-plugin-tamagui"
   },
   "scripts": {
+    "clean": "rm -rf ./dist",
     "lint": "run-p lint:*",
     "lint:eslint": "eslint --ext .ts,.tsx ./src",
     "lint:tsc": "tsc --noEmit",
     "lint:prettier": "prettier --check ./src",
     "fix:prettier": "prettier --write ./src",
-    "build": "rm -rf ./dist && swc ./src -d dist",
+    "build": "pnpm run clean && swc src -d dist",
     "test": "vitest run src/__tests__",
-    "test:watch": "watchlist src -- pnpm run test",
+    "test:watch": "vitest watch src/__tests__",
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
@@ -44,18 +45,17 @@
     "@typescript-eslint/parser": "^6.7.2",
     "@typescript-eslint/rule-tester": "^6.7.2",
     "@typescript-eslint/types": "^6.7.2",
+    "chalk": "^4.1.2",
     "eslint": "^8.50.0",
     "eslint-plugin-eslint-plugin": "^5.1.1",
     "eslint-plugin-import": "2.26.0",
-    "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-unused-imports": "^3.0.0",
-    "mocha": "^10.0.0",
+    "mocha": "^10.2.0",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.0.3",
     "typescript": "^5.2.2",
     "vite": "^4.4.9",
-    "vitest": "^0.34.5",
-    "watchlist": "^0.3.1"
+    "vitest": "^0.34.5"
   },
   "peerDependencies": {
     "@tamagui/core": "*",

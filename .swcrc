@@ -1,0 +1,11 @@
+{
+  "exclude": "src/__tests__/",
+  "jsc": {
+    "parser": {
+      "syntax": "typescript"
+    }
+  },
+  "module": {
+    "type": "commonjs"
+  }
+}
