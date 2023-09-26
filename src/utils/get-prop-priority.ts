@@ -1,5 +1,7 @@
 import type { Config } from '../rules/props-order';
 
+// Need to re-do this whole thing with tamagui props and shorthands, no idea how I'ma do this
+
 // priority range: 0 <= x < 100
 const stylePropsPriority = {
   // System
@@ -42,7 +44,7 @@ type PriorityGroup = {
 const priorityGroups: readonly PriorityGroup[] = [
   {
     name: 'System',
-    keys: ['as', 'sx', 'layerStyle', 'textStyle'],
+    keys: ['as', 'style', 'key', 'component', 'name', 'ref'],
     priority: stylePropsPriority['System'],
   },
   {

@@ -70,6 +70,7 @@ tester.run('props-order', propsOrderRule, {
           px: '$2',
           py: '$4',
           m: '$1',
+          {...rest},
           flexWrap: 'wrap',
           border: '1px solid red',
         });
@@ -79,11 +80,12 @@ tester.run('props-order', propsOrderRule, {
         import { styled, Stack } from '@tamagui/core';
 
         const StyledStack = styled(Stack, {
-          border: '1px solid red',
-          flexWrap: 'wrap',
           m: '$1',
           px: '$2',
           py: '$4',
+          {...rest},
+          flexWrap: 'wrap',
+          border: '1px solid red',
         });
       `,
     },

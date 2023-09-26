@@ -147,9 +147,9 @@ const sortProps = (unsorted: TSESTree.ObjectExpression, config: Config) => {
 
   // contains SpreadAttribute
   // Sort sections which has only JSXAttributes.
-  const start = 0;
+  let start = 0;
   let end = 0;
-  const sorted: TSESTree.ObjectLiteralElement[] = [];
+  let sorted: TSESTree.ObjectLiteralElement[] = [];
 
   const unsortedProperties = unsorted.properties;
 
@@ -195,7 +195,7 @@ const sortProps = (unsorted: TSESTree.ObjectExpression, config: Config) => {
         console.log(sectionToSort.map((prop) => prop.key.name));
         const sectionSorted = sectionToSort.sort((a, b) => compareProperties(a, b, config));
         console.log(sectionSorted.map((prop) => prop.key.name));
-        // sorted = sorted.concat(sectionSorted);
+        sorted = sorted.concat(sectionSorted);
       }
     }
   }
