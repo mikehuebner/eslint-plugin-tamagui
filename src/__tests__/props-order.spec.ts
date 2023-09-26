@@ -3,7 +3,7 @@ import path from 'path';
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { afterAll, describe, it } from 'vitest';
 
-import { propsOrderRule } from '../rules/props-order/props-order';
+import { propsOrderRule } from '../rules/props-order';
 
 RuleTester.describe = describe;
 RuleTester.it = it;
@@ -23,32 +23,99 @@ const tester = new RuleTester({
 
 tester.run('props-order', propsOrderRule, {
   valid: [
-    {
-      name: 'Sorted style props',
-      code: `
-        import { Stack } from '@tamagui/core';
+    // {
+    //   name: 'Sorted style props',
+    //   code: `
+    //     import { Stack } from '@tamagui/core';
 
-        <Stack key={key} m="$1" px="$2" onPress={onPress} {...props} py="$4" fontSize="md" />
+    //     <Stack key={key} m="$1" px="$2" py="$4" fontSize="md" onPress={onPress} />
+    //   `,
+    // },
+
+    {
+      name: 'Sorted style props on `styled` components',
+      code: `
+        import { styled, Stack } from '@tamagui/core';
+
+        const StyledStack = styled(Stack, {
+          m: '$1',
+          px: '$2',
+          py: '$4',
+          fontSize: 'md',
+        });
       `,
     },
   ],
 
   invalid: [
+    // {
+    //   name: 'Not sorted props',
+    //   code: `
+    //     import { Stack } from '@tamagui/core';
+    //     <Stack px="$2" as="div" onClick={onClick} m="$1" key={key} {...props} fontSize="md" py={2} />
+    //   `,
+    //   errors: [{ messageId: 'invalidOrder' }],
+    //   output: `
+    //     import { Stack } from '@tamagui/core';
+    //     <Stack key={key} as="div" m="$1" px="$2" onClick={onClick} {...props} py={2} fontSize="md" />
+    //   `,
+    // },
+
     {
-      name: 'Not sorted',
+      name: 'Not sorted `styled` props',
       code: `
-        import { Stack } from '@tamagui/core';
-      
-        <Stack px="$2" onPress={onPress} m="$1" {...props} fontSize="md" py="$4" />
+        import { styled, Stack } from '@tamagui/core';
+
+        const StyledStack = styled(Stack, {
+          px: '$2',
+          py: '$4',
+          m: '$1',
+          flexWrap: 'wrap',
+          border: '1px solid red',
+        });
       `,
       errors: [{ messageId: 'invalidOrder' }],
       output: `
-        import { Stack } from 'tamagui';
+        import { styled, Stack } from '@tamagui/core';
 
-        <Stack key={key} m="$1" px="$2" onPress={onPress} {...props} py="$4" fontSize="md" />
+        const StyledStack = styled(Stack, {
+          border: '1px solid red',
+          flexWrap: 'wrap',
+          m: '$1',
+          px: '$2',
+          py: '$4',
+        });
       `,
     },
+
+    // {
+    //   name: 'Multiple lines must not be concatenated',
+    //   code: `
+    //     import { XStack } from "@tamagui/core";
+    //     <XStack
+    //       px="2"
+    //       as="div"
+    //       fontSize="md"
+    //       py={2}
+    //     >
+    //       Hello
+    //     </XStack>;
+    //   `,
+    //   errors: [{ messageId: 'invalidOrder' }],
+    //   output: `
+    //     import { XStack } from "@tamagui/core";
+    //     <XStack
+    //       as="div"
+    //       px="2"
+    //       py={2}
+    //       fontSize="md"
+    //     >
+    //       Hello
+    //     </XStack>;
+    //   `,
+    // },
   ],
+
   // valid: [
   //   {
   //     name: 'Sorted style props',
@@ -93,33 +160,7 @@ tester.run('props-order', propsOrderRule, {
   //         <Box key={key} as="div" m="1" px="2" onClick={onClick} {...props} py={2} fontSize="md">Hello</Box>
   //     `,
   //   },
-  //   {
-  //     name: 'Multiple lines must not be concatenated',
-  //     code: `
-  //               import { Box } from "@chakra-ui/react";
-  //               <Box
-  //                 px="2"
-  //                 as="div"
-  //                 fontSize="md"
-  //                 py={2}
-  //               >
-  //                 Hello
-  //               </Box>;
-  //           `,
-  //     errors: [{ messageId: 'invalidOrder' }],
-  //     output: `
-  //               import { Box } from "@chakra-ui/react";
-  //               <Box
-  //                 as="div"
-  //                 px="2"
-  //                 py={2}
-  //                 fontSize="md"
-  //               >
-  //                 Hello
-  //               </Box>;
-  //           `,
-  //   },
-  //   {
+
   //     name: '`Other Props` should be sorted in alphabetical order',
   //     code: `
   //         import { Box } from "@chakra-ui/react";

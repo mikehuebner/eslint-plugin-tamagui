@@ -31,19 +31,22 @@ const findModuleSpecifier = (declaration: Declaration): Expression | null => {
 };
 
 /**
- * This tests if the given node is a JSX element from the Tamagui module library, or at least
- * one of them.
+ * This tests if the given node is a call to `styled` imported from the Tamagui module library.
  */
-export const isTamaguiElement = (
-  node: TSESTree.JSXOpeningElement,
+export const isTamaguiStyled = (
+  node: TSESTree.CallExpression,
   parserServices: ParserServicesWithTypeInformation,
-) => {
+): boolean => {
+  if (!node.callee || node.callee.type !== 'Identifier' || node.callee.name !== 'styled') {
+    return false;
+  }
+
   const typeChecker = parserServices.program.getTypeChecker();
-  const tsNode = parserServices.esTreeNodeToTSNodeMap.get(node.name);
+  const tsNode = parserServices.esTreeNodeToTSNodeMap.get(node.callee);
   const symbol = typeChecker.getSymbolAtLocation(tsNode);
 
-  // string tag
-  if (symbol == null) {
+  // No symbol for callee
+  if (!symbol) {
     return false;
   }
 

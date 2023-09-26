@@ -2,5 +2,5 @@
   "compilerOptions": {
     "strict": true
   },
-  "include": ["file.ts", "react.tsx", "./tamagui/**/*"]
+  "include": ["file.ts", "react.tsx", "./.tamagui/**/*"]
 }

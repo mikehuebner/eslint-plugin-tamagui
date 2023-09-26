@@ -82,11 +82,11 @@ const getThemeColors = (themes: TamaguiInternalConfig['themes'], { defaultTheme 
 /**
  * Read and process the tamagui config file into a simpler format
  */
-export const getTamaguiConfig = () => {
+export const getTamaguiConfig = (tamaguiConfigFilePath?: string) => {
   const options = readTamaguiOptions();
 
-  const tamaguiConfigFilePath = path.join('./.tamagui/tamagui.config.json');
-  const tamaguiConfigFile = readFileSync(tamaguiConfigFilePath, 'utf-8');
+  const _tamaguiConfigFilePath = path.join(tamaguiConfigFilePath ?? './.tamagui/tamagui.config.json');
+  const tamaguiConfigFile = readFileSync(_tamaguiConfigFilePath, 'utf-8');
 
   if (!tamaguiConfigFile) {
     throw new Error(`No tamagui config file found.`);
@@ -123,3 +123,5 @@ export const getTamaguiConfig = () => {
 };
 
 export type ParsedTamaguiConfig = ReturnType<typeof getTamaguiConfig>;
+
+export default getTamaguiConfig();
