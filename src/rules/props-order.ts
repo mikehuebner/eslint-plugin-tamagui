@@ -1,4 +1,4 @@
-import { AST_NODE_TYPES, TSESLint, TSESTree, ESLintUtils } from '@typescript-eslint/utils';
+import { AST_NODE_TYPES, TSESTree, ESLintUtils } from '@typescript-eslint/utils';
 import { getParserServices } from '@typescript-eslint/utils/eslint-utils';
 
 import { getPropPriority } from '../utils/get-prop-priority';
@@ -29,11 +29,6 @@ const defaultFirstProps = ['key', 'ref'];
 const defaultLastProps: string[] = [];
 // const defaultIsCompPropsBeforeStyleProps = false;
 
-const isJSXAttribute = (node: TSESTree.Node): node is TSESTree.JSXAttribute =>
-  node.type === AST_NODE_TYPES.JSXAttribute;
-
-const isProperty = (node: TSESTree.Node): node is TSESTree.Property => node.type === AST_NODE_TYPES.Property;
-
 const compareAttributes = (a: TSESTree.JSXAttribute, b: TSESTree.JSXAttribute, config: Config) => {
   const aPriority = getPropPriority(a.name.name.toString(), config);
   const bPriority = getPropPriority(b.name.name.toString(), config);
@@ -50,16 +45,6 @@ const compareAttributes = (a: TSESTree.JSXAttribute, b: TSESTree.JSXAttribute, c
       return a.name.name < a.name.name ? -1 : 1;
   }
 };
-
-/**
- *  Create a fixer for the given attribute, replacing it with the text of the given attribute
- */
-const createFix = (
-  unsotedAttribute: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
-  sortedAttribute: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
-  fixer: TSESLint.RuleFixer,
-  sourceCode: Readonly<TSESLint.SourceCode>,
-) => fixer.replaceText(unsotedAttribute, sourceCode.getText(sortedAttribute));
 
 const areAllJSXAttribute = (
   attributes: (TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute)[],
@@ -117,7 +102,10 @@ const sortAttributes = (unsorted: (TSESTree.JSXAttribute | TSESTree.JSXSpreadAtt
   return sorted;
 };
 
-const compareProperties = (a: TSESTree.ObjectLiteralElement, b: TSESTree.ObjectLiteralElement, config: Config) => {
+/**
+ * This compares two `Property` objects, slightly different syntax from JSXAttribute
+ */
+const compareProperties = (a: TSESTree.Property, b: TSESTree.Property, config: Config) => {
   const aPriority = getPropPriority(a.key.name.toString(), config);
   const bPriority = getPropPriority(b.key.name.toString(), config);
 
@@ -134,16 +122,16 @@ const compareProperties = (a: TSESTree.ObjectLiteralElement, b: TSESTree.ObjectL
   }
 };
 
-const areAllSpreadObjectProp = (props: TSESTree.ObjectExpression): props is TSESTree.ObjectExpression =>
-  props.type === AST_NODE_TYPES.ObjectExpression;
+const areAllProperties = (props: TSESTree.ObjectExpression): props is AST_NODE_TYPES.Property =>
+  props.type === AST_NODE_TYPES.Property;
 
 const sortProps = (unsorted: TSESTree.ObjectExpression, config: Config) => {
-  // const noSpread = areAllSpreadObjectProp(unsorted);
+  const noSpread = areAllProperties(unsorted);
 
-  // if (noSpread) {
-  //   const sorted = [...unsorted.properties].sort((a, b) => compare(a, b, config));
-  //   return sorted;
-  // }
+  if (noSpread) {
+    const sorted = [...unsorted.properties].sort((a, b) => compareProperties(a, b, config));
+    return sorted;
+  }
 
   // contains SpreadAttribute
   // Sort sections which has only JSXAttributes.
@@ -158,15 +146,8 @@ const sortProps = (unsorted: TSESTree.ObjectExpression, config: Config) => {
 
     if (
       !unsortedProp ||
-      unsortedProp.type !== AST_NODE_TYPES.Property ||
-      unsortedProp.key.type !== AST_NODE_TYPES.Identifier
+      (unsortedProp.type !== AST_NODE_TYPES.Property && unsortedProp.type !== AST_NODE_TYPES.SpreadElement)
     ) {
-      continue;
-    }
-
-    const unsortedPropName = unsortedProp.key.name;
-
-    if (!unsortedPropName) {
       continue;
     }
 
@@ -177,6 +158,8 @@ const sortProps = (unsorted: TSESTree.ObjectExpression, config: Config) => {
         // Sort sections which don't have JSXSpreadAttribute.
         const sectionToSort = unsorted.properties.slice(start, end);
         const sectionSorted = sectionToSort.sort((a, b) => compareProperties(a, b, config));
+
+        console.log(sectionSorted.map((prop) => prop.key.name.toString()));
 
         sorted = sorted.concat(sectionSorted);
       }
@@ -192,9 +175,7 @@ const sortProps = (unsorted: TSESTree.ObjectExpression, config: Config) => {
       if (start < end) {
         // Sort sections which don't have JSXSpreadAttribute.
         const sectionToSort = unsorted.properties.slice(start, end);
-        console.log(sectionToSort.map((prop) => prop.key.name));
         const sectionSorted = sectionToSort.sort((a, b) => compareProperties(a, b, config));
-        console.log(sectionSorted.map((prop) => prop.key.name));
         sorted = sorted.concat(sectionSorted);
       }
     }
@@ -267,11 +248,11 @@ export const propsOrderRule = ESLintUtils.RuleCreator.withoutDocs<Options[], Mes
           componentSpecificProps: undefined, // not supported yet
         } satisfies Config;
 
-        const sorted = sortAttributes(node.attributes, config);
+        const sortedAttributes = sortAttributes(node.attributes, config);
         const sourceCode = getSourceCode();
 
         for (const [index, attribute] of node.attributes.entries()) {
-          const sortedAttribute = sorted[index]!;
+          const sortedAttribute = sortedAttributes[index]!;
 
           if (attribute.type !== AST_NODE_TYPES.JSXAttribute) {
             continue;
@@ -285,9 +266,8 @@ export const propsOrderRule = ESLintUtils.RuleCreator.withoutDocs<Options[], Mes
               node: node,
               messageId: MessageIds.invalidOrder,
               fix: (fixer) => {
-                console.log('fixing');
-                const fixingList = sorted.map((sortedAttribute, index) =>
-                  createFix(node.attributes[index]!, sortedAttribute, fixer, sourceCode),
+                const fixingList = sortedAttributes.map((sortedAttribute, index) =>
+                  fixer.replaceText(node.attributes[index]!, sourceCode.getText(sortedAttribute)),
                 );
 
                 // Operate from the end so that the unoperated node positions are not changed.
@@ -321,32 +301,36 @@ export const propsOrderRule = ESLintUtils.RuleCreator.withoutDocs<Options[], Mes
         } satisfies Config;
 
         const sortedProperties = sortProps(styledObjectArg, config);
+        const sourceCode = getSourceCode();
 
         // Check properties that need replacement
-        for (const property of styledObjectArg.properties) {
-          if (property.type !== 'Property' || property.key.type !== 'Identifier') {
+        for (const [index, unsortedProp] of styledObjectArg.properties.entries()) {
+          if (unsortedProp.type !== AST_NODE_TYPES.Property || unsortedProp.key.type !== AST_NODE_TYPES.Identifier) {
             continue;
           }
 
-          const originalPropName = property.key.name;
+          const sortedPropName = sortedProperties[index]?.key?.name?.toString();
+          const unsortedPropName = unsortedProp.key.name;
 
-          // if (PROP_REPLACEMENTS[originalPropName]) {
-          //   report({
-          //     node: node,
-          //     messageId: MessageIds.invalidOrder,
-          //     fix: (fixer) => {
-          //       console.log('fixing');
-          //       const fixingList = sorted.map((sortedAttribute, index) =>
-          //         createFix(node.attributes[index]!, sortedAttribute, fixer, sourceCode),
-          //       );
+          if (sortedPropName !== unsortedPropName) {
+            report({
+              node,
+              messageId: MessageIds.invalidOrder,
+              fix: (fixer) => {
+                const fixingList = sortedProperties.map((sortedProperty, index) =>
+                  // We are already here, we can assert this isn't undefined :eyeroll:
+                  fixer.replaceText(styledObjectArg.properties[index]!, sourceCode.getText(sortedProperty)),
+                );
 
-          //       // Operate from the end so that the unoperated node positions are not changed.
-          //       // If you start from the start, each time you manipulate a attribute,
-          //       // the following node positions will shift and autofix never work.
-          //       return fixingList.reverse();
-          //     },
-          //   });
-          // }
+                // Operate from the end so that the unoperated node positions are not changed.
+                // If you start from the start, each time you manipulate a attribute,
+                // the following node positions will shift and autofix never work.
+                return fixingList.reverse();
+              },
+            });
+
+            break;
+          }
         }
       },
     };

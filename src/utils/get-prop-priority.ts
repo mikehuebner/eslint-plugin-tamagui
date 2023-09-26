@@ -2,6 +2,16 @@ import type { Config } from '../rules/props-order';
 
 // Need to re-do this whole thing with tamagui props and shorthands, no idea how I'ma do this
 
+/**
+ * The idea I have to get this more dynamic is grabbing all the possible elements, which I believe tamagui provides and create relational elements.
+ * So anything related to `margin`, `padding`, `position`, `flexbox`, etc can all be split up as those properties aren't
+ * going to change too often. But also, there should be a place where all these are broken up anyway, I wonder where that could be...
+ *
+ * When that is all split up we need to match the shorthands to it, to do this we should be able to use the internal config
+ * like we are doing for `prop-prefer-shorthand` and just grab the shorthands from there linking them to their longer counter part. In terms of order though
+ * it seems like this is EXTREMELY specific. I wonder if I can get those from the config as well.
+ */
+
 // priority range: 0 <= x < 100
 const stylePropsPriority = {
   // System
@@ -44,7 +54,7 @@ type PriorityGroup = {
 const priorityGroups: readonly PriorityGroup[] = [
   {
     name: 'System',
-    keys: ['as', 'style', 'key', 'component', 'name', 'ref'],
+    keys: ['as', 'style', 'key', 'component', 'name', 'ref', 'testID'],
     priority: stylePropsPriority['System'],
   },
   {
